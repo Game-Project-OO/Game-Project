@@ -4,10 +4,10 @@ pygame.init()
 
 tamanho_tela = altura, largura = 1366, 768
 velocidade = [2, 2]
-cor_fundo = pygame.image.load('/home/diego/Documentos/OO - Python/Game/TELA_NOME2.png')
+cor_fundo = pygame.image.load('IMAGENS/TELA_NOME2.png')
 
 tela = pygame.display.set_mode(tamanho_tela)
-nave = pygame.image.load('/home/diego/Downloads/nave.png')
+nave = pygame.image.load('IMAGENS/nave.png')
 nave_redimensionada = pygame.transform.scale(nave, (50,70))
 nave_rect = nave_redimensionada.get_rect()
 
