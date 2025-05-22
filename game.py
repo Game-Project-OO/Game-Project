@@ -25,8 +25,4 @@ while True:
     tela.blit(cor_fundo, (-100,-70))
     tela.blit(nave_redimensionada, nave_rect)
 
-    pygame.display.flip()# nao
-# to baixando o anydesk aqui pra ver se da pra mexer na area de trabalho 2 e eu ficar de boa na 1, 
-
-
-#se eu dou python game.py ele abre pra vc? abre
+    pygame.display.flip()
