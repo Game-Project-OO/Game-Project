@@ -1,4 +1,4 @@
-import sys, pygame
+import pygame
 
 janela = pygame.display.set_mode([1280, 720])
 
@@ -18,7 +18,6 @@ while loop:
     for events in pygame.event.get():
         if events.type == pygame.QUIT:
             loop = False
-            sys.exit()
     
     teclas = pygame.key.get_pressed()
     
