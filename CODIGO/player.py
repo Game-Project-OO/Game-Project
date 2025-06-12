@@ -4,15 +4,15 @@ from laser import Laser
 class Jogador(pygame.sprite.Sprite):
     def __init__(self,pos,restricao,speed):
         super().__init__()
-        self.image = pygame.image.load('../IMAGENS/player.png').convert_alpha()
-        self.imageFrente = pygame.image.load('../IMAGENS/player.png').convert_alpha()
-        self.imageDir = pygame.image.load('../IMAGENS/player_dir.png').convert_alpha()
-        self.imageEsq = pygame.image.load('../IMAGENS/player_esq.png').convert_alpha()
+        self.image = pygame.image.load('../imagens/player.png').convert_alpha()
+        self.imageFrente = pygame.image.load('../imagens/player.png').convert_alpha()
+        self.imageDir = pygame.image.load('../imagens/player_dir.png').convert_alpha()
+        self.imageEsq = pygame.image.load('../imagens/player_esq.png').convert_alpha()
         self.rect = self.image.get_rect(midbottom = pos)
         self.speed = speed
         self.max_x_restricao = restricao
         self.ready = True
-        self.shoot_sound = pygame.mixer.Sound('../SONS/shoot_sound.mp3')
+        self.shoot_sound = pygame.mixer.Sound('../sons/shoot_sound.mp3')
         self.laser_time = 0
         self.laser_cooldown = 600
 

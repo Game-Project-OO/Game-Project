@@ -13,10 +13,10 @@ class Jogo:
 
         #vida e pontuação
         self.vidas = 3
-        self.vida_imagem = pygame.image.load('../IMAGENS/heart.png').convert_alpha()
+        self.vida_imagem = pygame.image.load('../imagens/heart.png').convert_alpha()
         self.vida_x_posicao = screen_width - (self.vida_imagem.get_size()[0] * 2 + 20)
         self.score = 0
-        self.font = pygame.font.Font('../FONTE/Pixeled.ttf',20)
+        self.font = pygame.font.Font('../fonte/Pixeled.ttf',20)
 
         #setup do obstaculo
         self.shape = obstacle.shape
