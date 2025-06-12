@@ -4,11 +4,15 @@ from laser import Laser
 class Jogador(pygame.sprite.Sprite):
     def __init__(self,pos,restricao,speed):
         super().__init__()
-        self.image = pygame.image.load('IMAGENS/player.png').convert_alpha()
+        self.image = pygame.image.load('../IMAGENS/player.png').convert_alpha()
+        self.imageFrente = pygame.image.load('../IMAGENS/player.png').convert_alpha()
+        self.imageDir = pygame.image.load('../IMAGENS/player_dir.png').convert_alpha()
+        self.imageEsq = pygame.image.load('../IMAGENS/player_esq.png').convert_alpha()
         self.rect = self.image.get_rect(midbottom = pos)
         self.speed = speed
         self.max_x_restricao = restricao
         self.ready = True
+        self.shoot_sound = pygame.mixer.Sound('../SONS/shoot_sound.mp3')
         self.laser_time = 0
         self.laser_cooldown = 600
 
@@ -20,11 +24,17 @@ class Jogador(pygame.sprite.Sprite):
 
         if keys[pygame.K_RIGHT]:
             self.rect.x += self.speed
-        elif keys[pygame.K_LEFT]:
+            self.image = self.imageDir
+        if keys[pygame.K_LEFT]:
             self.rect.x -= self.speed
-
+            self.image = self.imageEsq
+        if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+            self.image = self.imageFrente
+        
         if keys[pygame.K_SPACE] and self.ready:
             self.shoot_laser()
+            self.shoot_sound.set_volume(0.1)
+            self.shoot_sound.play()
             self.ready = False
             self.laser_time = pygame.time.get_ticks()
 
