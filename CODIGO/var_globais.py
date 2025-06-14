@@ -1,6 +1,4 @@
 import pygame
 
-janelaX = 1280
-janelaY = 720
-
-janela = pygame.display.set_mode([janelaX, janelaY])
+screen_width = 768
+screen_height = 768

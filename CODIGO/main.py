@@ -4,6 +4,8 @@ import obstacle
 from alien import Alien
 from random import choice
 from laser import Laser
+from var_globais import *
+from alien_spawn import SpawnAlien
 
 class Jogo:
     def __init__(self):
@@ -12,25 +14,124 @@ class Jogo:
         self.player = pygame.sprite.GroupSingle(player_sprite)
 
         #vida e pontuação
-        self.vidas = 3
-        self.vida_imagem = pygame.image.load('../imagens/heart.png').convert_alpha()
-        self.vida_x_posicao = screen_width - (self.vida_imagem.get_size()[0] * 2 + 20)
-        self.score = 0
-        self.font = pygame.font.Font('../fonte/Pixeled.ttf',20)
+        self.__vidas = 3
+        self.__vida_imagem = pygame.image.load('../imagens/heart.png').convert_alpha()
+        self.__vida_x_posicao = screen_width - (self.vida_imagem.get_size()[0] * 3 + 20)
+        self.__score = 0
+        self.__font = pygame.font.Font('../fonte/Pixeled.ttf',20)
 
         #setup do obstaculo
-        self.shape = obstacle.shape
-        self.block_size = 6
-        self.blocks = pygame.sprite.Group()
-        self.quantidade_de_obstaculos = 4
+        self.__shape = obstacle.shape
+        self.__block_size = 6
+        self.__blocks = pygame.sprite.Group()
+        self.__quantidade_de_obstaculos = 4
         self.posicao_x_obstaculos = [num * (screen_width / self.quantidade_de_obstaculos) for num in range(self.quantidade_de_obstaculos)]
         self.criar_multiplos_obstaculos(*self.posicao_x_obstaculos, x_start = screen_width / 15, y_start = 600)
 
         #setup do alien
-        self.aliens = pygame.sprite.Group()
-        self.alien_setup(rows = 3, cols = 6)
-        self.alien_direction = 1
-        self.alien_lasers = pygame.sprite.Group()
+        self.__aliens = pygame.sprite.Group()
+        self.__alien_direction = 1
+        self.__alien_lasers = pygame.sprite.Group()
+
+        #criacao dos padroes de aliens
+        padrao = SpawnAlien()
+        padrao.padrao_1(self.aliens)
+
+    @property
+    def vidas(self):
+        return self.__vidas
+    
+    @vidas.setter
+    def vidas(self, value):
+        self.__vidas = value
+
+    @property
+    def vida_imagem(self):
+        return self.__vida_imagem
+    
+    @vida_imagem.setter
+    def vida_imagem(self, value):
+        self.__vida_imagem = value
+
+    @property
+    def vida_x_posicao(self):
+        return self.__vida_x_posicao
+    
+    @vida_x_posicao.setter
+    def vida_x_posicao(self, value):
+        self.__vida_x_posicao = value
+
+    @property
+    def score(self):
+        return self.__score
+    
+    @score.setter
+    def score(self, value):
+        self.__score = value
+
+    @property
+    def font(self):
+        return self.__font
+    
+    @font.setter
+    def font(self, value):
+        self.__font = value
+
+    @property
+    def shape(self):
+        return self.__shape
+    
+    @shape.setter
+    def shape(self, value):
+        self.__shape = value
+
+    @property
+    def block_size(self):
+        return self.__block_size
+    
+    @block_size.setter
+    def block_size(self, value):
+        self.__block_size = value
+
+    @property
+    def blocks(self):
+        return self.__blocks
+    
+    @blocks.setter
+    def blocks(self, value):
+        self.__blocks = value
+
+    @property
+    def quantidade_de_obstaculos(self):
+        return self.__quantidade_de_obstaculos
+    
+    @quantidade_de_obstaculos.setter
+    def quantidade_de_obstaculos(self, value):
+        self.__quantidade_de_obstaculos = value
+
+    @property
+    def aliens(self):
+        return self.__aliens
+    
+    @aliens.setter
+    def aliens(self, value):
+        self.__aliens = value
+
+    @property
+    def alien_direction(self):
+        return self.__alien_direction
+    
+    @alien_direction.setter
+    def alien_direction(self, value):
+        self.__alien_direction = value
+
+    @property
+    def alien_lasers(self):
+        return self.__alien_lasers
+    
+    @alien_lasers.setter
+    def alien_lasers(self, value):
+        self.__alien_lasers = value
 
     #cria um obstaculo
     def criar_obstaculo(self, x_start, y_start,offset_x):
@@ -47,21 +148,7 @@ class Jogo:
         for offset_x in offset:
             self.criar_obstaculo(x_start,y_start,offset_x)
 
-    def alien_setup(self,rows,cols,y_distance=100,x_offset = 70,y_offset = 100):
-        posicao_x_alien = [num * ((screen_width - 2 * x_offset) / cols) for num in range(cols)]
-        for row_index, row in enumerate(range(rows)):
-            for col_index, col in enumerate(range(cols)):
-                x = posicao_x_alien[col_index]
-                y = row_index * y_distance + y_offset
 
-                if row_index == 0: 
-                    alien_sprite = Alien('enemy_red',x,y)
-                elif row_index == 1:
-                    alien_sprite = Alien('enemy_blue',x,y)
-                else:
-                    alien_sprite = Alien('enemy',x,y)
-
-                self.aliens.add(alien_sprite)
 
     def alien_position_checker(self):
         all_aliens = self.aliens.sprites()
@@ -123,7 +210,7 @@ class Jogo:
                     sys.exit()
 
     def mostrar_vidas(self):
-        for vida in range(self.vidas - 1):
+        for vida in range(self.vidas):
             x = self.vida_x_posicao + (vida * self.vida_imagem.get_size()[0] + 10)
             screen.blit(self.vida_imagem,(x,8))
 
@@ -152,14 +239,15 @@ class Jogo:
 
 if __name__ == '__main__':
     pygame.init()
-    screen_width = 768
-    screen_height = 768
     screen = pygame.display.set_mode((screen_width,screen_height))
     clock = pygame.time.Clock()
     game = Jogo()
 
     ALIENLASER = pygame.USEREVENT + 1
     pygame.time.set_timer(ALIENLASER,800)
+
+    SPAWN_ALIEN = pygame.USEREVENT + 2
+    pygame.time.set_timer(SPAWN_ALIEN,30000)
     
     while True:
         for event in pygame.event.get():
@@ -168,6 +256,8 @@ if __name__ == '__main__':
                 sys.exit()
             if event.type == ALIENLASER:
                 game.alien_shoot()
+            if event.type == SPAWN_ALIEN:
+                print("Mais aliens chegando...")
 
         screen.fill((30,30,30))
         game.rodar()
