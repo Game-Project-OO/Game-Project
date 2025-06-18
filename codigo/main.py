@@ -171,6 +171,8 @@ class Jogo:
             return 'enemy_blue'
         elif tipo == 'raro':
             return 'enemy_red'
+        elif tipo == 'lendario':
+            return 'enemy_red'
 
     def padroes(self,rows=3,y_distance=100,x_offset=60,y_offset=-250):
         posicao_x_alien = [num * ((screen_width - 2 * x_offset) / 7) for num in range(7)]
