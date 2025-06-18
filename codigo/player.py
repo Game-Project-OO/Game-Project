@@ -24,10 +24,12 @@ class Jogador(pygame.sprite.Sprite):
 
         if keys[pygame.K_RIGHT]:
             self.rect.x += self.speed
-            self.image = self.imageDir
+            self.image = pygame.transform.rotate(self.imageDir,355)
+            self.rect = self.image.get_rect(center=self.rect.center)
         if keys[pygame.K_LEFT]:
             self.rect.x -= self.speed
-            self.image = self.imageEsq
+            self.image = pygame.transform.rotate(self.imageEsq,5)
+            self.rect = self.image.get_rect(center=self.rect.center)
         if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
             self.image = self.imageFrente
         

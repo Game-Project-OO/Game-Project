@@ -1,6 +1,6 @@
 import pygame, sys
 from player import Jogador
-import obstacle
+from obstacle import Meteoro
 from alien import Alien
 from alien_smart import AlienSmart
 from random import choice
@@ -8,6 +8,7 @@ import random
 from laser import Laser
 from laser_alien import LaserAlien
 from var_globais import *
+from animacoes import Animacoes
 #from alien_spawn import SpawnAlien
 
 class Jogo:
@@ -24,12 +25,7 @@ class Jogo:
         self.__font = pygame.font.Font('../fonte/Pixeled.ttf',20)
 
         #setup do obstaculo
-        self.__shape = obstacle.shape
-        self.__block_size = 6
-        self.__blocks = pygame.sprite.Group()
-        self.__quantidade_de_obstaculos = 4
-        self.posicao_x_obstaculos = [num * (screen_width / self.quantidade_de_obstaculos) for num in range(self.quantidade_de_obstaculos)]
-        self.criar_multiplos_obstaculos(*self.posicao_x_obstaculos, x_start = screen_width / 15, y_start = 600)
+        self.__meteoro = pygame.sprite.Group()
     
         #setup do alien
         self.__aliens = pygame.sprite.Group()
@@ -46,7 +42,10 @@ class Jogo:
         self.__background = pygame.transform.scale(pygame.image.load('../imagens/background.png').convert(), (screen_width, screen_height))
 
         #criacao dos padroes de aliens
-        self.padroes()
+        self.enemy_spawn_cooldown = 5000
+
+        #setup de animações
+        self.animacao = Animacoes()
 
     @property
     def vidas(self):
@@ -89,36 +88,12 @@ class Jogo:
         self.__font = value
 
     @property
-    def shape(self):
-        return self.__shape
+    def meteoro(self):
+        return self.__meteoro
     
-    @shape.setter
-    def shape(self, value):
-        self.__shape = value
-
-    @property
-    def block_size(self):
-        return self.__block_size
-    
-    @block_size.setter
-    def block_size(self, value):
-        self.__block_size = value
-
-    @property
-    def blocks(self):
-        return self.__blocks
-    
-    @blocks.setter
-    def blocks(self, value):
-        self.__blocks = value
-
-    @property
-    def quantidade_de_obstaculos(self):
-        return self.__quantidade_de_obstaculos
-    
-    @quantidade_de_obstaculos.setter
-    def quantidade_de_obstaculos(self, value):
-        self.__quantidade_de_obstaculos = value
+    @meteoro.setter
+    def meteoro(self, value):
+        self.meteoro = value
 
     @property
     def aliens(self):
@@ -201,19 +176,11 @@ class Jogo:
         self.__background = value
 
     #cria um obstaculo
-    def criar_obstaculo(self, x_start, y_start,offset_x):
-        for row_index, row in enumerate(self.shape):
-            for col_index, col in enumerate(row):
-                if col =='x':
-                    x = x_start + col_index * self.block_size + offset_x
-                    y = y_start + row_index * self.block_size
-                    block = obstacle.Bloco(self.block_size,(241,79,80),x,y)
-                    self.blocks.add(block)
-
-    #cria multiplos obstaculos com um espaçamento entre eles, necessita da função anterior ^^^
-    def criar_multiplos_obstaculos(self,*offset,x_start,y_start):
-        for offset_x in offset:
-            self.criar_obstaculo(x_start,y_start,offset_x)
+    def criar_obstaculo(self):
+        posicao = random.randint(5,763)
+        valor_rotacao = random.uniform(-2.5,2.5)
+        tipo_meteoro = Meteoro(posicao,valor_rotacao)
+        self.meteoro.add(tipo_meteoro)
 
     def alien_position_checker(self):
         all_aliens = self.aliens.sprites()
@@ -236,7 +203,7 @@ class Jogo:
             self.aliens_smart_lasers.add(laser_sprite)
 
     def obter_inimigo(self):
-        tipo = random.choices(['comum','incomum','raro','lendario'], weights=[75,15,9.5,0.5], k=1)[0]
+        tipo = random.choices(['comum','incomum','raro'], weights=[75,15,10], k=1)[0]
 
         if tipo == 'comum':
             return 'enemy'
@@ -244,8 +211,9 @@ class Jogo:
             return 'enemy_blue'
         elif tipo == 'raro':
             return 'enemy_red'
-        elif tipo == 'lendario':
-            return 'enemy_red'
+        
+    def obter_inimigo_inteligente(self):
+        return 'enemy_green'
 
     def padroes(self,rows=3,y_distance=100,x_offset=60,y_offset=-250):
         posicao_x_alien = [num * ((screen_width - 2 * x_offset) / 7) for num in range(7)]
@@ -262,6 +230,7 @@ class Jogo:
         }
 
         selecionador_de_padrao_2000 = random.choices([1,2,3,4,5,6,'lendaria'], weights=[15.83,15.83,15.83,15.83,15.83,15.83,5.02], k=1)[0]
+        #selecionador_de_padrao_2000 = random.choices([1,2,3,4,5,6,'lendaria'], weights=[0.01,0.01,0.01,0.01,0.01,0.01,99.94], k=1)[0] #para testes
 
         definir_padrao = padroes_disponiveis.get(selecionador_de_padrao_2000,padroes_disponiveis[1])
 
@@ -272,21 +241,27 @@ class Jogo:
                 if col_index in padrao_atual:
                     continue
 
+
                 x = posicao_x_alien[col_index]
                 y = row_index * y_distance + y_offset
 
-                alien_sprite = self.obter_inimigo()
-                alien_type = Alien(alien_sprite,x,y)
-
-                alien_type.define_alvo_y(y + 290)
-                self.aliens.add(alien_type)
+                if selecionador_de_padrao_2000 == 'lendaria' and row_index == 1:
+                    alien_sprite = self.obter_inimigo_inteligente()
+                    alien_type = AlienSmart(alien_sprite,x,y)
+                    alien_type.define_alvo_y(y + 290)
+                    self.aliens_smart.add(alien_type)
+                else:
+                    alien_sprite = self.obter_inimigo()
+                    alien_type = Alien(alien_sprite,x,y)
+                    alien_type.define_alvo_y(y + 290)
+                    self.aliens.add(alien_type)
 
     def checar_colisao(self):
         #player laser
         if self.player.sprite.lasers:
             for laser in self.player.sprite.lasers:
                 #colisão com obstáculo
-                if pygame.sprite.spritecollide(laser,self.blocks,False):
+                if pygame.sprite.spritecollide(laser,self.meteoro,False):
                     laser.kill()
 
                 #colisão com alien
@@ -317,7 +292,7 @@ class Jogo:
         if self.alien_lasers:
             for laser in self.alien_lasers:
                 #colisão com obstáculo
-                if pygame.sprite.spritecollide(laser,self.blocks,False):
+                if pygame.sprite.spritecollide(laser,self.meteoro,False):
                     laser.kill()
 
                 if pygame.sprite.spritecollide(laser,self.player,False):
@@ -329,7 +304,7 @@ class Jogo:
 
         if self.aliens_smart_lasers:
             for laser in self.aliens_smart_lasers:
-                if pygame.sprite.spritecollide(laser,self.blocks,False):
+                if pygame.sprite.spritecollide(laser,self.meteoro,False):
                     laser.kill()
 
                 if pygame.sprite.spritecollide(laser,self.player,False):
@@ -353,6 +328,13 @@ class Jogo:
                     pygame.quit()
                     sys.exit()
 
+        if self.meteoro:
+            for meteoro in self.meteoro:
+                if pygame.sprite.spritecollide(meteoro,self.player,False):
+                    print("Usuário colidiu com o asteroide")
+                    pygame.quit()
+                    sys.exit()
+
     def mostrar_vidas(self):
         for vida in range(self.vidas):
             x = self.vida_x_posicao + (vida * self.vida_imagem.get_size()[0] + 10)
@@ -362,7 +344,9 @@ class Jogo:
         score_imagem = self.font.render(f'score: {self.score}',False,'white')
         score_rect = score_imagem.get_rect(topleft = (10,-10))
         screen.blit(score_imagem,score_rect)
+
     
+    '''
     def spawn_alien_smart(self):
         if self.score == 1000 and not self.aliens_smart_spawned: #uma flag pra verificar isso
             print("um dois três quatro, feijão no prato")
@@ -371,6 +355,7 @@ class Jogo:
             self.aliens_smart_spawned = True
             self.trilhaSonora_alienSmart.set_volume(0.05)
             self.trilhaSonora_alienSmart.play()
+    '''
 
     #desenha e atualiza todos os sprites
     def rodar(self):
@@ -383,22 +368,28 @@ class Jogo:
         self.alien_position_checker()
         self.checar_colisao()
 
+        '''
         self.spawn_alien_smart()
+        '''
         if self.player.sprite:
             player_x = self.player.sprite.rect.centerx
             for smart_alien in self.aliens_smart.sprites():
-                smart_alien.moveset(player_x)
+                smart_alien.update(player_x)
 
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
-        self.blocks.draw(screen)
         self.aliens.draw(screen)
         self.aliens_smart.draw(screen)
         self.alien_lasers.draw(screen)
         self.aliens_smart_lasers.draw(screen)
+        self.meteoro.draw(screen)
 
         self.mostrar_vidas()
         self.mostrar_score()
+
+        self.meteoro.update()
+
+        self.animacao.update(screen)
 
 if __name__ == '__main__':
     pygame.init()
@@ -409,12 +400,18 @@ if __name__ == '__main__':
     ALIENLASER = pygame.USEREVENT + 1
     pygame.time.set_timer(ALIENLASER,800)
 
-    ALIEN_SMART_LASER = pygame.USEREVENT + 3
-    pygame.time.set_timer(ALIEN_SMART_LASER, 1500)
-
     SPAWN_ALIEN = pygame.USEREVENT + 2
-    pygame.time.set_timer(SPAWN_ALIEN,30000)
+    pygame.time.set_timer(SPAWN_ALIEN,5000)
     
+    ALIEN_SMART_LASER = pygame.USEREVENT + 3
+    pygame.time.set_timer(ALIEN_SMART_LASER,1500)
+
+    SPAWN_ALIEN_ALERT_ANIMATION = pygame.USEREVENT + 4
+    pygame.time.set_timer(SPAWN_ALIEN_ALERT_ANIMATION,2000)
+
+    SPAWN_METEORO = pygame.USEREVENT + 5
+    pygame.time.set_timer(SPAWN_METEORO, 12500)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -424,8 +421,21 @@ if __name__ == '__main__':
                 game.alien_shoot()
             if event.type == ALIEN_SMART_LASER:
                 game.alien_smart_shoot()
+            if event.type == SPAWN_ALIEN_ALERT_ANIMATION:
+                game.animacao.iniciar_animacao()
+                if game.enemy_spawn_cooldown == 5000:
+                    pygame.time.set_timer(SPAWN_ALIEN_ALERT_ANIMATION, 0)
+                else:
+                    pygame.time.set_timer(SPAWN_ALIEN_ALERT_ANIMATION,30000)
             if event.type == SPAWN_ALIEN:
-                print("Mais aliens chegando...")
+                game.padroes()
+
+                if game.enemy_spawn_cooldown == 5000:
+                    game.enemy_spawn_cooldown += 25000
+                    pygame.time.set_timer(SPAWN_ALIEN,game.enemy_spawn_cooldown)
+                    pygame.time.set_timer(SPAWN_ALIEN_ALERT_ANIMATION,game.enemy_spawn_cooldown - 3000)
+            if event.type == SPAWN_METEORO:
+                game.criar_obstaculo()
 
         screen.fill((30,30,30))
         game.rodar()

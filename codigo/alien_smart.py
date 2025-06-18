@@ -10,7 +10,18 @@ class AlienSmart(Alien):
 
         if image == 'enemy_green':
             self.value = 500
-    
-    def moveset(self, posxPlayer):
-        diferencax = posxPlayer - self.rect.x
-        self.rect.x += diferencax * self.fator_perseguicao
+
+    def moveset(self,pos_x_player):
+        diferenca_x = pos_x_player - self.rect.centerx
+        self.rect.x += diferenca_x * self.fator_perseguicao
+
+    def update(self,pos_x_player):
+        if self.rect.y != self.alvo_y:
+            if self.rect.y == self.alvo_y - 290:
+                self.rect.x += 70
+            if self.rect.y < self.alvo_y:
+                self.rect.y += self.speed
+            elif self.rect.y == self.alvo_y:
+                self.rect.y = self.rect.y
+        
+        self.moveset(pos_x_player)

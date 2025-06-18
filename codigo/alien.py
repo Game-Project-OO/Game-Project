@@ -19,6 +19,8 @@ class Alien(pygame.sprite.Sprite):
             self.value = 200
         elif image == 'enemy_red': 
             self.value = 300
+        else:
+            self.value = 0
 
     def define_alvo_y(self, novo_y):
         self.alvo_y = novo_y
