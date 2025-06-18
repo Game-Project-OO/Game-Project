@@ -3,9 +3,10 @@ from player import Jogador
 import obstacle
 from alien import Alien
 from random import choice
+import random
 from laser import Laser
 from var_globais import *
-from alien_spawn import SpawnAlien
+#from alien_spawn import SpawnAlien
 
 class Jogo:
     def __init__(self):
@@ -27,15 +28,14 @@ class Jogo:
         self.__quantidade_de_obstaculos = 4
         self.posicao_x_obstaculos = [num * (screen_width / self.quantidade_de_obstaculos) for num in range(self.quantidade_de_obstaculos)]
         self.criar_multiplos_obstaculos(*self.posicao_x_obstaculos, x_start = screen_width / 15, y_start = 600)
-
+    
         #setup do alien
         self.__aliens = pygame.sprite.Group()
         self.__alien_direction = 1
         self.__alien_lasers = pygame.sprite.Group()
 
         #criacao dos padroes de aliens
-        padrao = SpawnAlien()
-        padrao.padrao_1(self.aliens)
+        self.padroes()
 
     @property
     def vidas(self):
@@ -148,22 +148,13 @@ class Jogo:
         for offset_x in offset:
             self.criar_obstaculo(x_start,y_start,offset_x)
 
-
-
     def alien_position_checker(self):
         all_aliens = self.aliens.sprites()
         for alien in all_aliens:
             if alien.rect.right >= screen_width:
                 self.alien_direction = -1
-                self.alien_move_down(2)
             elif alien.rect.left <= 0:
                 self.alien_direction = 1
-                self.alien_move_down(2)
-
-    def alien_move_down(self,distance):
-        if self.aliens:
-            for alien in self.aliens.sprites():
-                alien.rect.y += distance
 
     def alien_shoot(self):
         if self.aliens.sprites():
@@ -171,8 +162,51 @@ class Jogo:
             laser_sprite = Laser(random_alien.rect.center,6,screen_height)
             self.alien_lasers.add(laser_sprite)
 
-    def collision_checks(self):
+    def obter_inimigo(self):
+        tipo = random.choices(['comum','incomum','raro','lendario'], weights=[75,15,9.5,0.5], k=1)[0]
 
+        if tipo == 'comum':
+            return 'enemy'
+        elif tipo == 'incomum':
+            return 'enemy_blue'
+        elif tipo == 'raro':
+            return 'enemy_red'
+
+    def padroes(self,rows=3,y_distance=100,x_offset=60,y_offset=-250):
+        posicao_x_alien = [num * ((screen_width - 2 * x_offset) / 7) for num in range(7)]
+        
+        #par é impar e impar é par, enfim, a hipocrisia
+        padroes_disponiveis = {
+            1: {'par': [1,3,5], 'impar': [0,2,4,6]},
+            2: {'par': [0,3,6], 'impar': [1,2,4,5]},
+            3: {'par': [1,2,4,5], 'impar': [0,3,6]},
+            4: {'par': [1,3,5], 'impar': [1,3,5]},
+            5: {'par': [], 'impar': [0,2,3,4,6]},
+            6: {'par': [], 'impar': [1,3,5]},
+            'lendaria': {'par': [], 'impar': [0,1,2,4,5,6]}
+        }
+
+        selecionador_de_padrao_2000 = random.choices([1,2,3,4,5,6,'lendaria'], weights=[15.83,15.83,15.83,15.83,15.83,15.83,5.02], k=1)[0]
+
+        definir_padrao = padroes_disponiveis.get(selecionador_de_padrao_2000,padroes_disponiveis[1])
+
+        for row_index in range(rows):
+            padrao_atual = definir_padrao['par'] if row_index % 2 == 0 else definir_padrao['impar']
+
+            for col_index in range(7):
+                if col_index in padrao_atual:
+                    continue
+
+                x = posicao_x_alien[col_index]
+                y = row_index * y_distance + y_offset
+
+                alien_sprite = self.obter_inimigo()
+                alien_type = Alien(alien_sprite,x,y)
+
+                alien_type.define_alvo_y(y + 290)
+                self.aliens.add(alien_type)
+
+    def checar_colisao(self):
         #player laser
         if self.player.sprite.lasers:
             for laser in self.player.sprite.lasers:
@@ -226,7 +260,7 @@ class Jogo:
 
         self.aliens.update(self.alien_direction)
         self.alien_position_checker()
-        self.collision_checks()
+        self.checar_colisao()
 
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
