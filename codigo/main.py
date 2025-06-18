@@ -2,9 +2,11 @@ import pygame, sys
 from player import Jogador
 import obstacle
 from alien import Alien
+from alien_smart import AlienSmart
 from random import choice
 import random
 from laser import Laser
+from laser_alien import LaserAlien
 from var_globais import *
 #from alien_spawn import SpawnAlien
 
@@ -33,6 +35,15 @@ class Jogo:
         self.__aliens = pygame.sprite.Group()
         self.__alien_direction = 1
         self.__alien_lasers = pygame.sprite.Group()
+
+        self.__aliens_smart = pygame.sprite.Group()
+        self.__aliens_smart_lasers = pygame.sprite.Group()
+        self.__aliens_smart_spawned = False
+
+        self.__trilhaSonora_alienSmart = pygame.mixer.Sound('../sons/musicaGameplay.mp3')
+        self.__kill_sound = pygame.mixer.Sound('../sons/kill_sound.mp3')
+        self.__contagem = 0 #contagem para verificar quando o alien smart é atingido
+        self.__background = pygame.transform.scale(pygame.image.load('../imagens/background.png').convert(), (screen_width, screen_height))
 
         #criacao dos padroes de aliens
         self.padroes()
@@ -132,6 +143,62 @@ class Jogo:
     @alien_lasers.setter
     def alien_lasers(self, value):
         self.__alien_lasers = value
+    
+    @property
+    def aliens_smart(self):
+        return self.__aliens_smart
+
+    @aliens_smart.setter
+    def aliens_smart(self, value):
+        self.__aliens_smart = value
+    
+    @property
+    def aliens_smart_lasers(self):
+        return self.__aliens_smart_lasers
+
+    @aliens_smart_lasers.setter
+    def aliens_smart_lasers(self, value):
+        self.__aliens_smart_lasers = value
+    
+    @property
+    def aliens_smart_spawned(self):
+        return self.__aliens_smart_spawned
+
+    @aliens_smart_spawned.setter
+    def aliens_smart_spawned(self, value):
+        self.__aliens_smart_spawned = value
+
+    @property
+    def trilhaSonora_alienSmart(self):
+        return self.__trilhaSonora_alienSmart
+
+    @trilhaSonora_alienSmart.setter
+    def trilhaSonora_alienSmart(self, value):
+        self.__trilhaSonora_alienSmart = value
+
+    @property
+    def kill_sound(self):
+        return self.__kill_sound
+
+    @kill_sound.setter
+    def kill_sound(self, value):
+        self.__kill_sound = value
+    
+    @property
+    def contagem(self):
+        return self.__contagem
+
+    @contagem.setter
+    def contagem(self, value):
+        self.__contagem = value
+    
+    @property
+    def background(self):
+        return self.__background
+
+    @background.setter
+    def background(self, value):
+        self.__background = value
 
     #cria um obstaculo
     def criar_obstaculo(self, x_start, y_start,offset_x):
@@ -159,8 +226,14 @@ class Jogo:
     def alien_shoot(self):
         if self.aliens.sprites():
             random_alien = choice(self.aliens.sprites())
-            laser_sprite = Laser(random_alien.rect.center,6,screen_height)
+            laser_sprite = LaserAlien(random_alien.rect.center,6,screen_height)
             self.alien_lasers.add(laser_sprite)
+    
+    def alien_smart_shoot(self):
+        if self.aliens_smart.sprites():
+            random_smart_alien = choice(self.aliens_smart.sprites())
+            laser_sprite = Laser(random_smart_alien.rect.center, 20, screen_height)
+            self.aliens_smart_lasers.add(laser_sprite)
 
     def obter_inimigo(self):
         tipo = random.choices(['comum','incomum','raro','lendario'], weights=[75,15,9.5,0.5], k=1)[0]
@@ -218,9 +291,26 @@ class Jogo:
 
                 #colisão com alien
                 aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
+                smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, False)
+
                 if aliens_hit:
                     for alien in aliens_hit:
                         self.score += alien.value
+                        self.kill_sound.set_volume(0.2)
+                        self.kill_sound.play()
+                    laser.kill()
+                
+                if smart_aliens_hit:
+                    for alien in smart_aliens_hit:
+                        self.contagem += 1
+                        print(self.contagem)
+                        if self.contagem == 3:
+                            self.score += alien.value
+                            self.trilhaSonora_alienSmart.stop()
+                            self.kill_sound.set_volume(0.2)
+                            self.kill_sound.play()
+                            laser.kill()
+                            smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, True)
                     laser.kill()
         
         #alien laser
@@ -237,11 +327,29 @@ class Jogo:
                         pygame.quit()
                         sys.exit()
 
+        if self.aliens_smart_lasers:
+            for laser in self.aliens_smart_lasers:
+                if pygame.sprite.spritecollide(laser,self.blocks,False):
+                    laser.kill()
+
+                if pygame.sprite.spritecollide(laser,self.player,False):
+                    self.kill_sound.play()
+                    laser.kill()
+                    self.vidas -= 2
+                    if self.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
             
         #aliens
         if self.aliens:
             for alien in self.aliens:
                 if pygame.sprite.spritecollide(alien,self.player,False):
+                    pygame.quit()
+                    sys.exit()
+        
+        if self.aliens_smart:
+            for smart_alien in self.aliens_smart:
+                if pygame.sprite.spritecollide(smart_alien, self.player, False):
                     pygame.quit()
                     sys.exit()
 
@@ -254,21 +362,40 @@ class Jogo:
         score_imagem = self.font.render(f'score: {self.score}',False,'white')
         score_rect = score_imagem.get_rect(topleft = (10,-10))
         screen.blit(score_imagem,score_rect)
+    
+    def spawn_alien_smart(self):
+        if self.score == 1000 and not self.aliens_smart_spawned: #uma flag pra verificar isso
+            print("um dois três quatro, feijão no prato")
+            smart_alien = AlienSmart('enemy_green', screen_width/2, screen_height/2)
+            self.aliens_smart.add(smart_alien)
+            self.aliens_smart_spawned = True
+            self.trilhaSonora_alienSmart.set_volume(0.05)
+            self.trilhaSonora_alienSmart.play()
 
     #desenha e atualiza todos os sprites
     def rodar(self):
+        screen.blit(self.background, (0,0))
         self.player.update()
         self.alien_lasers.update()
+        self.aliens_smart_lasers.update()
 
         self.aliens.update(self.alien_direction)
         self.alien_position_checker()
         self.checar_colisao()
 
+        self.spawn_alien_smart()
+        if self.player.sprite:
+            player_x = self.player.sprite.rect.centerx
+            for smart_alien in self.aliens_smart.sprites():
+                smart_alien.moveset(player_x)
+
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
         self.blocks.draw(screen)
         self.aliens.draw(screen)
+        self.aliens_smart.draw(screen)
         self.alien_lasers.draw(screen)
+        self.aliens_smart_lasers.draw(screen)
 
         self.mostrar_vidas()
         self.mostrar_score()
@@ -282,6 +409,9 @@ if __name__ == '__main__':
     ALIENLASER = pygame.USEREVENT + 1
     pygame.time.set_timer(ALIENLASER,800)
 
+    ALIEN_SMART_LASER = pygame.USEREVENT + 3
+    pygame.time.set_timer(ALIEN_SMART_LASER, 1500)
+
     SPAWN_ALIEN = pygame.USEREVENT + 2
     pygame.time.set_timer(SPAWN_ALIEN,30000)
     
@@ -292,6 +422,8 @@ if __name__ == '__main__':
                 sys.exit()
             if event.type == ALIENLASER:
                 game.alien_shoot()
+            if event.type == ALIEN_SMART_LASER:
+                game.alien_smart_shoot()
             if event.type == SPAWN_ALIEN:
                 print("Mais aliens chegando...")
 
