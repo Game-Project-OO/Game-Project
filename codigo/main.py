@@ -3,6 +3,7 @@ from player import Jogador
 from obstacle import Meteoro
 from alien import Alien
 from alien_smart import AlienSmart
+from alien_kamikaze import AlienKamikaze
 from random import choice
 import random
 from laser import Laser
@@ -35,6 +36,9 @@ class Jogo:
         self.__aliens_smart = pygame.sprite.Group()
         self.__aliens_smart_lasers = pygame.sprite.Group()
         self.__aliens_smart_spawned = False
+
+        self.__aliens_kamikaze = pygame.sprite.Group()
+        self.__aliens_kamikaze_spawned = False
 
         self.__trilhaSonora_alienSmart = pygame.mixer.Sound('../sons/musicaGameplay.mp3')
         self.__kill_sound = pygame.mixer.Sound('../sons/kill_sound.mp3')
@@ -174,6 +178,22 @@ class Jogo:
     @background.setter
     def background(self, value):
         self.__background = value
+    
+    @property
+    def aliens_kamikaze(self):
+        return self.__aliens_kamikaze
+
+    @aliens_kamikaze.setter
+    def aliens_kamikaze(self, value):
+        self.__aliens_kamikaze = value
+
+    @property
+    def aliens_kamikaze_spawned(self):
+        return self.__aliens_kamikaze_spawned
+
+    @aliens_kamikaze_spawned.setter
+    def aliens_kamikaze_spawned(self, value):
+        self.__aliens_kamikaze_spawned = value
 
     #cria um obstaculo
     def criar_obstaculo(self):
@@ -199,7 +219,7 @@ class Jogo:
     def alien_smart_shoot(self):
         if self.aliens_smart.sprites():
             random_smart_alien = choice(self.aliens_smart.sprites())
-            laser_sprite = Laser(random_smart_alien.rect.center, 20, screen_height)
+            laser_sprite = LaserAlien(random_smart_alien.rect.center, 20, screen_height)
             self.aliens_smart_lasers.add(laser_sprite)
 
     def obter_inimigo(self):
@@ -214,6 +234,9 @@ class Jogo:
         
     def obter_inimigo_inteligente(self):
         return 'enemy_green'
+
+    def obter_inimigo_kamikaze(self):
+        return 'enemy_purple'
 
     def padroes(self,rows=3,y_distance=100,x_offset=60,y_offset=-250):
         posicao_x_alien = [num * ((screen_width - 2 * x_offset) / 7) for num in range(7)]
@@ -246,6 +269,11 @@ class Jogo:
                 y = row_index * y_distance + y_offset
 
                 if selecionador_de_padrao_2000 == 'lendaria' and row_index == 1:
+                    kamikaze_sprite = self.obter_inimigo_kamikaze()
+                    kamikaze_type = AlienKamikaze(kamikaze_sprite, screen_width/screen_width, screen_height/screen_height)  
+                    self.aliens_kamikaze.add(kamikaze_type)
+                    self.aliens_kamikaze_spawned = True
+
                     alien_sprite = self.obter_inimigo_inteligente()
                     alien_type = AlienSmart(alien_sprite,x,y)
                     alien_type.define_alvo_y(y + 290)
@@ -267,6 +295,7 @@ class Jogo:
                 #colisão com alien
                 aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
                 smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, False)
+                kamikaze_hit = pygame.sprite.spritecollide(laser, self.aliens_kamikaze, True)
 
                 if aliens_hit:
                     for alien in aliens_hit:
@@ -286,6 +315,13 @@ class Jogo:
                             self.kill_sound.play()
                             laser.kill()
                             smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, True)
+                    laser.kill()
+                
+                if kamikaze_hit:
+                    for kami in kamikaze_hit:
+                        self.score += kami.value
+                        self.kill_sound.set_volume(0.2)
+                        self.kill_sound.play()
                     laser.kill()
         
         #alien laser
@@ -327,6 +363,14 @@ class Jogo:
                 if pygame.sprite.spritecollide(smart_alien, self.player, False):
                     pygame.quit()
                     sys.exit()
+        
+        if self.aliens_kamikaze:
+            for kami in self.aliens_kamikaze:
+                if pygame.sprite.spritecollide(kami,self.player,True):
+                    self.vidas -= int(self.vidas)
+                    if self.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
 
         if self.meteoro:
             for meteoro in self.meteoro:
@@ -375,11 +419,18 @@ class Jogo:
             player_x = self.player.sprite.rect.centerx
             for smart_alien in self.aliens_smart.sprites():
                 smart_alien.update(player_x)
+        
+        if self.player.sprite:
+            player_x = self.player.sprite.rect.centerx
+            player_y = self.player.sprite.rect.centery
+            for kamikaze in self.aliens_kamikaze.sprites():
+                kamikaze.update(player_x, player_y)
 
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
         self.aliens.draw(screen)
         self.aliens_smart.draw(screen)
+        self.aliens_kamikaze.draw(screen)
         self.alien_lasers.draw(screen)
         self.aliens_smart_lasers.draw(screen)
         self.meteoro.draw(screen)
