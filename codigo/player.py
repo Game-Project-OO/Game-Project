@@ -27,6 +27,7 @@ class Jogador(pygame.sprite.Sprite):
         self.shoot_sound = pygame.mixer.Sound('../sons/shoot_sound.mp3')
         self.laser_time = 0
         self.laser_cooldown = 600
+        self.coconut = self.true_speed
 
         self.lasers = pygame.sprite.Group()
 
@@ -57,7 +58,7 @@ class Jogador(pygame.sprite.Sprite):
                 self.shield = 0
                 self.image = self.imageFrente
             elif self.pu_active["tipo"] == "speed":
-                self.speed = self.true_speed
+                self.speed = self.coconut
         self.pu_active = None
 
 
@@ -87,7 +88,6 @@ class Jogador(pygame.sprite.Sprite):
 
         if keys[pygame.K_SPACE] and self.ready:
             self.shoot_laser()
-            self.shoot_sound.set_volume(0.1)
             self.shoot_sound.play()
             self.ready = False
             self.laser_time = pygame.time.get_ticks()

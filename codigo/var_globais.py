@@ -1,6 +1,12 @@
 screen_width = 768
 screen_height = 768
 
+fonte = '../fonte/Pixeled.ttf'
+
+cor_menu_fundo = (0,0,0)
+cor_menu_branco = (255,255,255)
+cor_menu_texto_selecionado = (224, 27, 0)
+
 padroes_spawnados = 0
 cooldown_spawn_padroes = 5000
 cooldown_spawn_meteoro = 20000

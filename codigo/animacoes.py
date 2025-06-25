@@ -9,11 +9,13 @@ class Animacoes(pygame.sprite.Sprite):
         self.ativa = False
         self.inicio = 0
         self.mensagem = ""
+        self.sound = pygame.mixer.Sound('../sons/risada.mp3')
     
     def iniciar_animacao(self):
         self.ativa = True
         self.inicio = time.time()
-        self.mensagem = "Proxima onda em"
+        self.sound.play()
+        self.mensagem = "PROXIMA ONDA EM"
     
     def update(self,screen):
         if not self.ativa:

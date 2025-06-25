@@ -8,7 +8,7 @@ class Speed(Powerup):
         self.image = pygame.Surface((4,20))
         self.image = pygame.image.load('../imagens/speed_menor.png')
         self.__effect_value = 1.5
-        self.__duration = 15_000
+        self.__duration = 5000
 
     @property
     def effect_value(self):

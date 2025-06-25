@@ -20,11 +20,15 @@ from shield import Shield
 from speed import Speed
 #from alien_spawn import SpawnAlien
 
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Jogo")
+
 class Jogo:
     def __init__(self):
         #setup do jogador
         player_sprite = Jogador((screen_width / 2,screen_height),screen_width,5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
+        self.__player_name = ""
 
         #vida e pontuação
         self.__vidas = 3
@@ -32,7 +36,7 @@ class Jogo:
         self.__vida_extra_imagem = pygame.image.load('../imagens/heart_plus.png').convert_alpha()
         self.__vida_x_posicao = screen_width - (self.vida_imagem.get_size()[0] * 3 + 20)
         self.__score = 0
-        self.__font = pygame.font.Font('../fonte/Pixeled.ttf',20)
+        self.__font = pygame.font.Font(fonte,20)
 
         #setup do obstaculo
         self.__meteoro = pygame.sprite.Group()
@@ -55,7 +59,7 @@ class Jogo:
         self.__aliens_kamikaze = pygame.sprite.Group()
         self.__aliens_kamikaze_spawned = False
 
-        self.__trilhaSonora_alienSmart = pygame.mixer.Sound('../sons/musicaGameplay.mp3')
+        self.__trilhaSonora = pygame.mixer.Sound('../sons/gameplay_sound.mp3')
         self.__kill_sound = pygame.mixer.Sound('../sons/kill_sound.mp3')
         self.__contagem = 0 #contagem para verificar quando o alien smart é atingido
         self.__background = pygame.transform.scale(pygame.image.load('../imagens/background.png').convert(), (screen_width, screen_height))
@@ -66,6 +70,14 @@ class Jogo:
 
         #setup de animações
         self.animacao = Animacoes()
+
+    @property
+    def player_name(self):
+        return self.__player_name
+
+    @player_name.setter
+    def player_name(self, value):
+        self.__player_name = value
 
     @property
     def vidas(self):
@@ -204,12 +216,12 @@ class Jogo:
         self.__aliens_kamikaze_spawned = value
 
     @property
-    def trilhaSonora_alienSmart(self):
-        return self.__trilhaSonora_alienSmart
+    def trilhaSonora(self):
+        return self.__trilhaSonora
 
-    @trilhaSonora_alienSmart.setter
-    def trilhaSonora_alienSmart(self, value):
-        self.__trilhaSonora_alienSmart = value
+    @trilhaSonora.setter
+    def trilhaSonora(self, value):
+        self.__trilhaSonora = value
 
     @property
     def kill_sound(self):
@@ -414,7 +426,6 @@ class Jogo:
                 if aliens_hit:
                     for alien in aliens_hit:
                         self.score += alien.value
-                        self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
 
                     drop_chance = random.randint(1,100)
@@ -440,7 +451,6 @@ class Jogo:
                 if aliens_ricochete_hit:
                     for alien in aliens_ricochete_hit:
                         self.score += alien.value
-                        self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
                     
                     drop_chance = random.randint(1,100)
@@ -466,7 +476,6 @@ class Jogo:
                 if aliens_triplo_hit:
                     for alien in aliens_triplo_hit:
                         self.score += alien.value
-                        self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
 
                     drop_chance = random.randint(1,100)
@@ -495,8 +504,6 @@ class Jogo:
                         print(self.contagem)
                         if self.contagem == 3:
                             self.score += alien.value
-                            self.trilhaSonora_alienSmart.stop()
-                            self.kill_sound.set_volume(0.2)
                             self.kill_sound.play()
                             laser.kill()
                             smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, True)
@@ -505,7 +512,6 @@ class Jogo:
                 if kamikaze_hit:
                     for kami in kamikaze_hit:
                         self.score += kami.value
-                        self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
                     laser.kill()
 
@@ -522,6 +528,7 @@ class Jogo:
                         self.vidas -= 1
                         self.player.sprite.vidas -= 1
                     if self.vidas <= 0:
+                        self.definir_ranking()
                         pygame.quit()
                         sys.exit()
 
@@ -537,6 +544,7 @@ class Jogo:
                         self.vidas -= 1
                         self.player.sprite.vidas -= 1
                     if self.vidas <= 0:
+                        self.definir_ranking()
                         pygame.quit()
                         sys.exit()
 
@@ -567,11 +575,10 @@ class Jogo:
                     if self.player.sprite.shield == 0:
                         self.player.sprite.vidas -= 2
                     if self.player.sprite.vidas <= 0:
+                        self.definir_ranking()
                         pygame.quit()
                         sys.exit()
-                    if self.player.sprite.vidas <= 0:
-                        pygame.quit()
-                        sys.exit()
+                    
             
         #aliens
         if self.aliens:
@@ -756,11 +763,21 @@ class Jogo:
         self.powerups.update()
         self.powerups.draw(screen)
 
-if __name__ == '__main__':
+def start_game(volume_musica=0.5, volume_game=0.5):
+    global cooldown_spawn_padroes, cooldown_spawn_meteoro, modificador_do_peso, chance_drop_aditivo, modificador_peso_inimigo, alien_laser_cooldown, alien_blue_cooldown, alien_red_cooldown, padroes_spawnados
     pygame.init()
     screen = pygame.display.set_mode((screen_width,screen_height))
     clock = pygame.time.Clock()
     game = Jogo()
+    game.kill_sound.set_volume(volume_game)
+
+    jogador = game.player.sprite
+    jogador.shoot_sound.set_volume(volume_game)
+    animacao = game.animacao
+    animacao.sound.set_volume(volume_musica)
+
+    game.trilhaSonora.set_volume(volume_musica)
+    game.trilhaSonora.play(-1)
 
     ALIENLASER = pygame.USEREVENT + 1
     pygame.time.set_timer(ALIENLASER,1600)
@@ -804,7 +821,6 @@ if __name__ == '__main__':
                     continue
             if event.type == SPAWN_ALIEN:
                 game.padroes()
-
                 if cooldown_spawn_padroes == 5000:
                     cooldown_spawn_padroes += 25000
                     pygame.time.set_timer(SPAWN_ALIEN,cooldown_spawn_padroes)
@@ -819,3 +835,6 @@ if __name__ == '__main__':
 
         pygame.display.flip()
         clock.tick(60)
+
+if __name__ == '__main__':
+    start_game()
