@@ -4,12 +4,18 @@ from obstacle import Meteoro
 from alien import Alien
 from alien_smart import AlienSmart
 from alien_kamikaze import AlienKamikaze
+from alien_ricochete import AlienRicochete
+from alien_triplo import AlienTriplo
 from random import choice
 import random
 from laser import Laser
 from laser_alien import LaserAlien
+from laser_ricochete import LaserRicochete
+from laser_triplo import LaserTriplo
 from var_globais import *
 from animacoes import Animacoes
+from heal import Heal
+from shield import Shield
 #from alien_spawn import SpawnAlien
 
 class Jogo:
@@ -19,8 +25,9 @@ class Jogo:
         self.player = pygame.sprite.GroupSingle(player_sprite)
 
         #vida e pontuação
-        self.__vidas = 3
+        self.__vidas = 5
         self.__vida_imagem = pygame.image.load('../imagens/heart.png').convert_alpha()
+        self.__vida_extra_imagem = pygame.image.load('../imagens/heart_plus.png').convert_alpha()
         self.__vida_x_posicao = screen_width - (self.vida_imagem.get_size()[0] * 3 + 20)
         self.__score = 0
         self.__font = pygame.font.Font('../fonte/Pixeled.ttf',20)
@@ -32,6 +39,12 @@ class Jogo:
         self.__aliens = pygame.sprite.Group()
         self.__alien_direction = 1
         self.__alien_lasers = pygame.sprite.Group()
+        
+        self.__alien_ricochete = pygame.sprite.Group()
+        self.__alien_ricochete_lasers = pygame.sprite.Group()
+
+        self.__aliens_triplo = pygame.sprite.Group()
+        self.__aliens_triplo_lasers = pygame.sprite.Group()
 
         self.__aliens_smart = pygame.sprite.Group()
         self.__aliens_smart_lasers = pygame.sprite.Group()
@@ -45,6 +58,7 @@ class Jogo:
         self.__contagem = 0 #contagem para verificar quando o alien smart é atingido
         self.__background = pygame.transform.scale(pygame.image.load('../imagens/background.png').convert(), (screen_width, screen_height))
 
+        self.__powerups = pygame.sprite.Group()
         #criacao dos padroes de aliens
         self.enemy_spawn_cooldown = 5000
 
@@ -66,6 +80,14 @@ class Jogo:
     @vida_imagem.setter
     def vida_imagem(self, value):
         self.__vida_imagem = value
+    
+    @property
+    def vida_extra_imagem(self):
+        return self.__vida_extra_imagem
+    
+    @vida_extra_imagem.setter
+    def vida_extra_imagem(self, value):
+        self.vida_extra_imagem = value
 
     @property
     def vida_x_posicao(self):
@@ -124,6 +146,22 @@ class Jogo:
         self.__alien_lasers = value
     
     @property
+    def alien_ricochete(self):
+        return self.__alien_ricochete
+
+    @alien_ricochete.setter
+    def alien_ricochete(self, value):
+        self.__alien_ricochete = value
+
+    @property
+    def alien_ricochete_lasers(self):
+        return self.__alien_ricochete_lasers
+
+    @alien_ricochete_lasers.setter
+    def alien_ricochete_lasers(self, value):
+        self.__alien_ricochete_lasers = value
+    
+    @property
     def aliens_smart(self):
         return self.__aliens_smart
 
@@ -146,6 +184,22 @@ class Jogo:
     @aliens_smart_spawned.setter
     def aliens_smart_spawned(self, value):
         self.__aliens_smart_spawned = value
+    
+    @property
+    def aliens_kamikaze(self):
+        return self.__aliens_kamikaze
+
+    @aliens_kamikaze.setter
+    def aliens_kamikaze(self, value):
+        self.__aliens_kamikaze = value
+
+    @property
+    def aliens_kamikaze_spawned(self):
+        return self.__aliens_kamikaze_spawned
+
+    @aliens_kamikaze_spawned.setter
+    def aliens_kamikaze_spawned(self, value):
+        self.__aliens_kamikaze_spawned = value
 
     @property
     def trilhaSonora_alienSmart(self):
@@ -180,20 +234,28 @@ class Jogo:
         self.__background = value
     
     @property
-    def aliens_kamikaze(self):
-        return self.__aliens_kamikaze
+    def aliens_triplo(self):
+        return self.__aliens_triplo
 
-    @aliens_kamikaze.setter
-    def aliens_kamikaze(self, value):
-        self.__aliens_kamikaze = value
+    @aliens_triplo.setter
+    def aliens_triplo(self, value):
+        self.__aliens_triplo = value
 
     @property
-    def aliens_kamikaze_spawned(self):
-        return self.__aliens_kamikaze_spawned
+    def aliens_triplo_lasers(self):
+        return self.__aliens_triplo_lasers
 
-    @aliens_kamikaze_spawned.setter
-    def aliens_kamikaze_spawned(self, value):
-        self.__aliens_kamikaze_spawned = value
+    @aliens_triplo_lasers.setter
+    def aliens_triplo_lasers(self, value):
+        self.__aliens_triplo_lasers = value
+
+    @property
+    def powerups(self):
+        return self.__powerups
+
+    @powerups.setter
+    def powerups(self, value):
+        self.__powerups = value
 
     #cria um obstaculo
     def criar_obstaculo(self):
@@ -209,12 +271,55 @@ class Jogo:
                 self.alien_direction = -1
             elif alien.rect.left <= 0:
                 self.alien_direction = 1
+    
+    def alien_ricochete_position_checker(self):
+        all_aliens = self.alien_ricochete.sprites()
+        for alien in all_aliens:
+            if alien.rect.right >= screen_width:
+                self.alien_direction = -1
+            elif alien.rect.left <= 0:
+                self.alien_direction = 1
+    
+    def alien_triplo_position_checker(self):
+        all_aliens = self.aliens_triplo.sprites()
+        for alien in all_aliens:
+            if alien.rect.right >= screen_width:
+                self.alien_direction = -1
+            elif alien.rect.left <= 0:
+                self.alien_direction = 1
 
     def alien_shoot(self):
         if self.aliens.sprites():
             random_alien = choice(self.aliens.sprites())
             laser_sprite = LaserAlien(random_alien.rect.center,6,screen_height)
             self.alien_lasers.add(laser_sprite)
+    
+    def alien_shoot_ricochete(self):
+        if self.alien_ricochete.sprites():
+            random_alien = choice(self.alien_ricochete.sprites())
+            laser_speed = 6
+            laser_sprite = LaserRicochete(random_alien.rect.center,laser_speed,screen_height)
+            self.alien_ricochete_lasers.add(laser_sprite)
+    
+    def alien_shoot_triplo(self):
+        if self.aliens_triplo.sprites():
+            random_alien = choice(self.aliens_triplo.sprites())
+            laser_speed = 6
+            laser_speed_direito = -0.75
+            laser_speed_esquerdo = 0.75
+            
+            laser_sprite = LaserAlien(random_alien.rect.center, laser_speed, screen_height)
+            self.aliens_triplo_lasers.add(laser_sprite)
+
+            offset_x_direita = 25
+            pos_direita_x = random_alien.rect.centerx + offset_x_direita
+            laser_direito_sprite = LaserTriplo((pos_direita_x, random_alien.rect.centery), laser_speed, screen_height, laser_speed_direito)
+            self.aliens_triplo_lasers.add(laser_direito_sprite)
+            
+            offset_x_esquerda = offset_x_direita * -1
+            pos_esquerda_x = random_alien.rect.centerx + offset_x_esquerda
+            laser_esquerdo_sprite = LaserTriplo((pos_esquerda_x, random_alien.rect.centery), laser_speed, screen_height, laser_speed_esquerdo)
+            self.aliens_triplo_lasers.add(laser_esquerdo_sprite)
     
     def alien_smart_shoot(self):
         if self.aliens_smart.sprites():
@@ -223,20 +328,19 @@ class Jogo:
             self.aliens_smart_lasers.add(laser_sprite)
 
     def obter_inimigo(self):
-        tipo = random.choices(['comum','incomum','raro'], weights=[75,15,10], k=1)[0]
+        tipo = random.choices(['comum','incomum','raro','epico'], weights=[65,15,7.5,2.5], k=1)[0]
 
         if tipo == 'comum':
             return 'enemy'
-        elif tipo == 'incomum':
+        if tipo == 'incomum':
             return 'enemy_blue'
-        elif tipo == 'raro':
+        if tipo == 'raro':
             return 'enemy_red'
-        
+        if tipo == 'epico':
+            return 'enemy_purple'
+
     def obter_inimigo_inteligente(self):
         return 'enemy_green'
-
-    def obter_inimigo_kamikaze(self):
-        return 'enemy_purple'
 
     def padroes(self,rows=3,y_distance=100,x_offset=60,y_offset=-250):
         posicao_x_alien = [num * ((screen_width - 2 * x_offset) / 7) for num in range(7)]
@@ -269,20 +373,25 @@ class Jogo:
                 y = row_index * y_distance + y_offset
 
                 if selecionador_de_padrao_2000 == 'lendaria' and row_index == 1:
-                    kamikaze_sprite = self.obter_inimigo_kamikaze()
-                    kamikaze_type = AlienKamikaze(kamikaze_sprite, screen_width/screen_width, screen_height/screen_height)  
-                    self.aliens_kamikaze.add(kamikaze_type)
-                    self.aliens_kamikaze_spawned = True
-
                     alien_sprite = self.obter_inimigo_inteligente()
                     alien_type = AlienSmart(alien_sprite,x,y)
                     alien_type.define_alvo_y(y + 290)
                     self.aliens_smart.add(alien_type)
                 else:
                     alien_sprite = self.obter_inimigo()
-                    alien_type = Alien(alien_sprite,x,y)
-                    alien_type.define_alvo_y(y + 290)
-                    self.aliens.add(alien_type)
+                    if alien_sprite == 'enemy':
+                        alien_type = Alien(alien_sprite,x,y)
+                        self.aliens.add(alien_type)
+                    elif alien_sprite == 'enemy_blue':
+                        alien_type = AlienRicochete(alien_sprite,x,y)
+                        self.alien_ricochete.add(alien_type)
+                    elif alien_sprite == 'enemy_red':
+                        alien_type = AlienTriplo(alien_sprite,x,y)
+                        self.aliens_triplo.add(alien_type)
+                    elif alien_sprite == 'enemy_purple':
+                        alien_type = AlienKamikaze(alien_sprite,x,y)
+                        self.aliens_kamikaze.add(alien_type)
+                    alien_type.define_alvo_y(y+290)
 
     def checar_colisao(self):
         #player laser
@@ -294,6 +403,8 @@ class Jogo:
 
                 #colisão com alien
                 aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
+                aliens_ricochete_hit = pygame.sprite.spritecollide(laser,self.alien_ricochete, True)
+                aliens_triplo_hit = pygame.sprite.spritecollide(laser,self.aliens_triplo, True)
                 smart_aliens_hit = pygame.sprite.spritecollide(laser, self.aliens_smart, False)
                 kamikaze_hit = pygame.sprite.spritecollide(laser, self.aliens_kamikaze, True)
 
@@ -302,6 +413,71 @@ class Jogo:
                         self.score += alien.value
                         self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
+
+                    drop_chance = random.randint(1,100)
+                    tipo = ""
+                    if drop_chance <= 10:
+                        tipo = random.choice(["heal", "shield"])
+                        #criando o power up no jogo
+                        if tipo == "heal":
+                            powerup = Heal(alien.rect.centerx, alien.rect.centery)
+                        elif tipo == "shield":
+                            powerup = Shield(alien.rect.centerx, alien.rect.centery)                
+                        self.powerups.add(powerup)
+
+                            #aliens
+                        if self.aliens:        
+                            if pygame.sprite.spritecollide(alien,self.player,False):
+                                pygame.quit()
+                                sys.exit()
+                    laser.kill()
+                
+                if aliens_ricochete_hit:
+                    for alien in aliens_ricochete_hit:
+                        self.score += alien.value
+                        self.kill_sound.set_volume(0.2)
+                        self.kill_sound.play()
+                    
+                    drop_chance = random.randint(1,100)
+                    tipo = ""
+                    if drop_chance <= 10:
+                        tipo = random.choice(["heal", "shield"])
+                        #criando o power up no jogo
+                        if tipo == "heal":
+                            powerup = Heal(alien.rect.centerx, alien.rect.centery)
+                        elif tipo == "shield":
+                            powerup = Shield(alien.rect.centerx, alien.rect.centery)                
+                        self.powerups.add(powerup)
+
+                            #aliens
+                        if self.alien_ricochete:        
+                            if pygame.sprite.spritecollide(alien,self.player,False):
+                                pygame.quit()
+                                sys.exit()
+                    laser.kill()
+                
+                if aliens_triplo_hit:
+                    for alien in aliens_triplo_hit:
+                        self.score += alien.value
+                        self.kill_sound.set_volume(0.2)
+                        self.kill_sound.play()
+
+                    drop_chance = random.randint(1,100)
+                    tipo = ""
+                    if drop_chance <= 10:
+                        tipo = random.choice(["heal", "shield"])
+                        #criando o power up no jogo
+                        if tipo == "heal":
+                            powerup = Heal(alien.rect.centerx, alien.rect.centery)
+                        elif tipo == "shield":
+                            powerup = Shield(alien.rect.centerx, alien.rect.centery)                
+                        self.powerups.add(powerup)
+
+                            #aliens
+                        if self.aliens_triplo:        
+                            if pygame.sprite.spritecollide(alien,self.player,False):
+                                pygame.quit()
+                                sys.exit()
                     laser.kill()
                 
                 if smart_aliens_hit:
@@ -323,7 +499,7 @@ class Jogo:
                         self.kill_sound.set_volume(0.2)
                         self.kill_sound.play()
                     laser.kill()
-        
+
         #alien laser
         if self.alien_lasers:
             for laser in self.alien_lasers:
@@ -333,8 +509,37 @@ class Jogo:
 
                 if pygame.sprite.spritecollide(laser,self.player,False):
                     laser.kill()
-                    self.vidas -= 1
-                    if self.vidas <= 0:
+                    if self.player.sprite.shield == 0:
+                        self.player.sprite.vidas -= 1
+                    if self.player.sprite.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
+        
+        if self.alien_ricochete_lasers:
+            for laser in self.alien_ricochete_lasers:
+                #colisão com obstáculo
+                if pygame.sprite.spritecollide(laser,self.meteoro,False):
+                    laser.kill()
+
+                if pygame.sprite.spritecollide(laser,self.player,False):
+                    laser.kill()
+                    if self.player.sprite.shield == 0:
+                        self.player.sprite.vidas -= 1
+                    if self.player.sprite.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
+
+        if self.aliens_triplo_lasers:
+            for laser in self.aliens_triplo_lasers:
+                #colisão com obstáculo
+                if pygame.sprite.spritecollide(laser,self.meteoro,False):
+                    laser.kill()
+
+                if pygame.sprite.spritecollide(laser,self.player,False):
+                    laser.kill()
+                    if self.player.sprite.shield == 0:
+                        self.player.sprite.vidas -= 1
+                    if self.player.sprite.vidas <= 0:
                         pygame.quit()
                         sys.exit()
 
@@ -346,8 +551,12 @@ class Jogo:
                 if pygame.sprite.spritecollide(laser,self.player,False):
                     self.kill_sound.play()
                     laser.kill()
-                    self.vidas -= 2
-                    if self.vidas <= 0:
+                    if self.player.sprite.shield == 0:
+                        self.player.sprite.vidas -= 2
+                    if self.player.sprite.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
+                    if self.player.sprite.vidas <= 0:
                         pygame.quit()
                         sys.exit()
             
@@ -355,6 +564,22 @@ class Jogo:
         if self.aliens:
             for alien in self.aliens:
                 if pygame.sprite.spritecollide(alien,self.player,False):
+                    pygame.quit()
+                    sys.exit()
+        
+        power_up_coletado = pygame.sprite.spritecollide(self.player.sprite, self.powerups, True)
+        for pups in power_up_coletado:
+            pups.efeito(self.player.sprite)
+
+        if self.alien_ricochete:
+            for alien_rico in self.alien_ricochete:
+                if pygame.sprite.spritecollide(alien_rico,self.player,False):
+                    pygame.quit()
+                    sys.exit()
+        
+        if self.aliens_triplo:
+            for alien_triplo in self.aliens_triplo:
+                if pygame.sprite.spritecollide(alien_triplo,self.player,False):
                     pygame.quit()
                     sys.exit()
         
@@ -380,41 +605,36 @@ class Jogo:
                     sys.exit()
 
     def mostrar_vidas(self):
-        for vida in range(self.vidas):
-            x = self.vida_x_posicao + (vida * self.vida_imagem.get_size()[0] + 10)
-            screen.blit(self.vida_imagem,(x,8))
+        for vida in range(self.player.sprite.vidas):
+            #sai do loop pois já tem o maximo de vidas
+            if vida >= self.vidas:
+                break
+
+            x = self.vida_x_posicao + (vida * self.vida_imagem.get_size()[0] - 20)
+            screen.blit(self.vida_imagem,(x,5))
 
     def mostrar_score(self):
         score_imagem = self.font.render(f'score: {self.score}',False,'white')
         score_rect = score_imagem.get_rect(topleft = (10,-10))
         screen.blit(score_imagem,score_rect)
 
-    
-    '''
-    def spawn_alien_smart(self):
-        if self.score == 1000 and not self.aliens_smart_spawned: #uma flag pra verificar isso
-            print("um dois três quatro, feijão no prato")
-            smart_alien = AlienSmart('enemy_green', screen_width/2, screen_height/2)
-            self.aliens_smart.add(smart_alien)
-            self.aliens_smart_spawned = True
-            self.trilhaSonora_alienSmart.set_volume(0.05)
-            self.trilhaSonora_alienSmart.play()
-    '''
-
     #desenha e atualiza todos os sprites
     def rodar(self):
         screen.blit(self.background, (0,0))
         self.player.update()
         self.alien_lasers.update()
+        self.alien_ricochete_lasers.update()
+        self.aliens_triplo_lasers.update()
         self.aliens_smart_lasers.update()
 
         self.aliens.update(self.alien_direction)
+        self.alien_ricochete.update(self.alien_direction)
+        self.aliens_triplo.update(self.alien_direction)
         self.alien_position_checker()
+        self.alien_ricochete_position_checker()
+        self.alien_triplo_position_checker()
         self.checar_colisao()
 
-        '''
-        self.spawn_alien_smart()
-        '''
         if self.player.sprite:
             player_x = self.player.sprite.rect.centerx
             for smart_alien in self.aliens_smart.sprites():
@@ -429,9 +649,13 @@ class Jogo:
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
         self.aliens.draw(screen)
+        self.alien_ricochete.draw(screen)
+        self.aliens_triplo.draw(screen)
         self.aliens_smart.draw(screen)
         self.aliens_kamikaze.draw(screen)
         self.alien_lasers.draw(screen)
+        self.alien_ricochete_lasers.draw(screen)
+        self.aliens_triplo_lasers.draw(screen)
         self.aliens_smart_lasers.draw(screen)
         self.meteoro.draw(screen)
 
@@ -441,6 +665,9 @@ class Jogo:
         self.meteoro.update()
 
         self.animacao.update(screen)
+        #atualizando os power ups
+        self.powerups.update()
+        self.powerups.draw(screen)
 
 if __name__ == '__main__':
     pygame.init()
@@ -450,17 +677,23 @@ if __name__ == '__main__':
 
     ALIENLASER = pygame.USEREVENT + 1
     pygame.time.set_timer(ALIENLASER,800)
+    
+    ALIEN_BLUE_LASER = pygame.USEREVENT + 2
+    pygame.time.set_timer(ALIEN_BLUE_LASER,1000)
 
-    SPAWN_ALIEN = pygame.USEREVENT + 2
+    ALIEN_RED_LASER = pygame.USEREVENT + 3
+    pygame.time.set_timer(ALIEN_RED_LASER,1200)
+
+    SPAWN_ALIEN = pygame.USEREVENT + 4
     pygame.time.set_timer(SPAWN_ALIEN,5000)
     
-    ALIEN_SMART_LASER = pygame.USEREVENT + 3
+    ALIEN_SMART_LASER = pygame.USEREVENT + 5
     pygame.time.set_timer(ALIEN_SMART_LASER,1500)
 
-    SPAWN_ALIEN_ALERT_ANIMATION = pygame.USEREVENT + 4
+    SPAWN_ALIEN_ALERT_ANIMATION = pygame.USEREVENT + 6
     pygame.time.set_timer(SPAWN_ALIEN_ALERT_ANIMATION,2000)
 
-    SPAWN_METEORO = pygame.USEREVENT + 5
+    SPAWN_METEORO = pygame.USEREVENT + 7
     pygame.time.set_timer(SPAWN_METEORO, 12500)
 
     while True:
@@ -470,6 +703,10 @@ if __name__ == '__main__':
                 sys.exit()
             if event.type == ALIENLASER:
                 game.alien_shoot()
+            if event.type == ALIEN_BLUE_LASER:
+                game.alien_shoot_ricochete()
+            if event.type == ALIEN_RED_LASER:
+                game.alien_shoot_triplo()
             if event.type == ALIEN_SMART_LASER:
                 game.alien_smart_shoot()
             if event.type == SPAWN_ALIEN_ALERT_ANIMATION:

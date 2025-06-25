@@ -8,6 +8,17 @@ class Jogador(pygame.sprite.Sprite):
         self.imageFrente = pygame.image.load('../imagens/player.png').convert_alpha()
         self.imageDir = pygame.image.load('../imagens/player_dir.png').convert_alpha()
         self.imageEsq = pygame.image.load('../imagens/player_esq.png').convert_alpha()
+        self.imageEscudoFrente = pygame.image.load('../imagens/player_shield.png').convert_alpha()
+        self.imageEscudoDir = pygame.image.load('../imagens/playerdir_shield.png').convert_alpha()
+        self.imageEscudoEsq = pygame.image.load('../imagens/playeresq_shield.png').convert_alpha()
+
+        #Checagem para os power ups 
+        self.vidas = 3
+        self.shield = 0 
+        self.pu_active = None
+        self.pu_start = 0
+        self.pu_end = 0 
+
         self.rect = self.image.get_rect(midbottom = pos)
         self.speed = speed
         self.max_x_restricao = restricao
@@ -18,21 +29,57 @@ class Jogador(pygame.sprite.Sprite):
 
         self.lasers = pygame.sprite.Group()
 
+    #aplicar o efeito
+    def apply_pu(self, tipo, valor_efeito, duracao):
+        
+        if self.pu_active is not None:
+            self.remove()
+
+        if tipo == "heal":
+            self.vidas += valor_efeito
+            if self.vidas > 5:
+                self.vidas = 5
+        elif tipo == "shield":
+            self.shield = 1
+
+            self.image = self.imageEscudoFrente
+        
+        self.pu_active = {"tipo": tipo, "valor_efeito": valor_efeito, "duracao": duracao, "inicio": pygame.time.get_ticks()}
+
+
+    #remover efeito
+    def remove_pu(self):
+        if self.pu_active:
+            if self.pu_active["tipo"] == "shield":
+                self.shield = 0
+                self.image = self.imageFrente
+        self.pu_active = None
+
+
     #inputs
     def get_input(self):
         keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed
-            self.image = pygame.transform.rotate(self.imageDir,355)
-            self.rect = self.image.get_rect(center=self.rect.center)
-        if keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed
-            self.image = pygame.transform.rotate(self.imageEsq,5)
-            self.rect = self.image.get_rect(center=self.rect.center)
-        if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
-            self.image = self.imageFrente
-        
+        if self.shield == 1:
+            if keys[pygame.K_RIGHT]:
+                self.rect.x += self.speed
+                self.image = self.imageEscudoDir
+            if keys[pygame.K_LEFT]:
+                self.rect.x -= self.speed
+                self.image = self.imageEscudoEsq
+            if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+                self.image = self.imageEscudoFrente
+
+        else:
+            if keys[pygame.K_RIGHT]:
+                self.rect.x += self.speed
+                self.image = self.imageDir
+            if keys[pygame.K_LEFT]:
+                self.rect.x -= self.speed
+                self.image = self.imageEsq
+            if not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+                self.image = self.imageFrente
+
         if keys[pygame.K_SPACE] and self.ready:
             self.shoot_laser()
             self.shoot_sound.set_volume(0.1)
@@ -63,3 +110,8 @@ class Jogador(pygame.sprite.Sprite):
         self.restricao()
         self.recarregar()
         self.lasers.update()
+        #checar se o power up ainda está ativo...
+        if self.pu_active:
+            tempo_atual = pygame.time.get_ticks()
+            if tempo_atual - self.pu_active["inicio"] >= self.pu_active["duracao"]:
+                self.remove_pu()
