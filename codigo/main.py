@@ -9,6 +9,7 @@ from laser import Laser
 from laser_alien import LaserAlien
 from var_globais import *
 from animacoes import Animacoes
+from ranking import Ranking
 #from alien_spawn import SpawnAlien
 
 class Jogo:
@@ -299,6 +300,12 @@ class Jogo:
                     laser.kill()
                     self.vidas -= 1
                     if self.vidas <= 0:
+                        nome = f"Jogador{random.randint(1000, 9999)}"
+                        pontuacao = self.score
+
+                        ranking = Ranking()
+                        ranking.salvar(nome,pontuacao)
+                        ranking.exibir()
                         pygame.quit()
                         sys.exit()
 
@@ -331,6 +338,12 @@ class Jogo:
         if self.meteoro:
             for meteoro in self.meteoro:
                 if pygame.sprite.spritecollide(meteoro,self.player,False):
+                    nome = f"Jogador{random.randint(1000, 9999)}"
+                    pontuacao = self.score
+
+                    ranking = Ranking()
+                    ranking.salvar(nome,pontuacao)
+                    ranking.exibir()
                     print("Usuário colidiu com o asteroide")
                     pygame.quit()
                     sys.exit()
