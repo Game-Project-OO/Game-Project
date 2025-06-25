@@ -15,10 +15,6 @@ class Alien(pygame.sprite.Sprite):
 
         if image == 'enemy':
             self.value = 100
-        elif image == 'enemy_blue':
-            self.value = 200
-        elif image == 'enemy_red': 
-            self.value = 300
         else:
             self.value = 0
 
@@ -31,7 +27,5 @@ class Alien(pygame.sprite.Sprite):
                 self.rect.x += 70
             if self.rect.y < self.alvo_y:
                 self.rect.y += self.speed
-            elif self.rect.y == self.alvo_y:
-                self.rect.y = self.rect.y
         else:
             self.rect.x += direction

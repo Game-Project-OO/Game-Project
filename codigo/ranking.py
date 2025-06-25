@@ -10,7 +10,7 @@ class Ranking:
             with open(self.caminho, "r") as arquivo:
                 for linha in arquivo:
                     nome, pontuacao = linha.strip().split(",")
-                    lista.append([nome], int(pontuacao))
+                    lista.append([nome, int(pontuacao)])
         except FileNotFoundError:
             pass
         return lista

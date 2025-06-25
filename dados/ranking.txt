@@ -1,1 +1,8 @@
+Jogador4615,18600
+Jogador4432,8400
+Jogador7314,7400
 Jogador3278,5500
+Jogador2736,1300
+Jogador9180,1100
+Jogador5840,0
+Jogador9086,0
