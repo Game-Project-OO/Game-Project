@@ -1,11 +1,11 @@
-screen_width = 768
-screen_height = 768
+largura_tela = 768
+altura_tela = 768
 
 fonte = '../fonte/Pixeled.ttf'
 
 cor_menu_fundo = (0,0,0)
 cor_menu_branco = (255,255,255)
-cor_menu_texto_selecionado = (224, 27, 0)
+cor_menu_texto_selecionado = (154, 0, 0)
 
 padroes_spawnados = 0
 cooldown_spawn_padroes = 5000
@@ -29,5 +29,5 @@ inimigo_peso_4 = 0 + modificador_peso_inimigo
 
 #cooldown laser inimigos
 alien_laser_cooldown = 1600
-alien_blue_cooldown = 1800
-alien_red_cooldown = 2000
+alien_azul_cooldown = 1800
+alien_vermelho_cooldown = 2000

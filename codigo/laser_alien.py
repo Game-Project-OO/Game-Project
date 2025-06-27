@@ -2,13 +2,29 @@ import pygame
 from laser import Laser
 
 class LaserAlien(Laser):
-    def __init__(self, pos, speed, screen_height):
-        super().__init__(pos, speed, screen_height)
-        self.image = pygame.Surface((4,20))
-        self.image = pygame.image.load('../imagens/ProjetilEnemy.png')
+    def __init__(self, pos, speed, altura_tela):
+        super().__init__(pos, speed, altura_tela)
+        self.__image = pygame.Surface((4,20))
+        self.__image = pygame.image.load('../imagens/ProjetilEnemy.png')
 
-    def destroy(self):
+    @property
+    def image(self):
+        return self.__image
+
+    @image.setter
+    def image(self, value):
+        self.__image = value
+
+    @property
+    def image(self):
+        return self.__image
+
+    @image.setter
+    def image(self, value):
+        self.__image = value
+
+    def destroy(self) -> None:
         return super().destroy()
     
-    def update(self):
+    def update(self) -> None:
         return super().update()
