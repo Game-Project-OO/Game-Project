@@ -52,8 +52,8 @@ Para definir um "contrato" que todas as entidades do jogo devem seguir, usamos c
 ### Composição e Agregação
 As relações entre os objetos foram modeladas com composição e agragação para criar sistemas coesos e desacoplados.
 
-* **Composição:** A classe `Player` possui um objeto `Weapon` como atributo. A arma é parte essencial do jogador e seu ciclo de vida está atrelado ao dele (se a nave é destruída, a arma também é).
-* **Agregação:** A classe `Game` gerencia uma lista de `Alien`. Os aliens existem como objetos independentes e são adicionados ou removidos da lista de forma dinâmica, sem que a existência de um dependa da existência do outro.
+* **Composição:** A classe `Jogador` possui um objeto `Laser` como atributo. A arma é parte essencial do jogador e seu ciclo de vida está atrelado ao dele (se a nave é destruída, a arma também é).
+* **Agregação:** A classe `Jogo` gerencia uma lista de `Alien`. Os aliens existem como objetos independentes e são adicionados ou removidos da lista de forma dinâmica, sem que a existência de um dependa da existência do outro.
 
 ### Tratamento de Exceções
 Para tornar o jogo mais robusto e à prova de falhas, o código utiliza blocos `try...except` para lidar com erros que poderiam interromper a execução, como o carregamento de arquivos externos.
